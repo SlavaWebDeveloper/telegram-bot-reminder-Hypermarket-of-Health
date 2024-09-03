@@ -1,6 +1,3 @@
-# Это тестовый файл для вашего Telegram-бота, который демонстрирует базовую функциональность обработки команд. 
-# В данном примере бот отвечает на команду /getchatid, отправляя пользователю ID его чата.
-
 import logging
 import os
 from dotenv import load_dotenv
@@ -15,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
-    await update.message.reply_text(f'Your chat ID is: {chat_id}')
+    # Попытка получить ID треда
+    msg_thread_id = getattr(update.message, 'message_thread_id', 'No thread ID')
+    await update.message.reply_text(f'Chat ID: {chat_id}\nMessage Thread ID: {msg_thread_id}')
 
 def main() -> None:
     application = Application.builder().token(TOKEN).build()

@@ -14,6 +14,11 @@ import gspread
 load_dotenv()
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TARGET_CHAT_ID = int(os.getenv('TELEGRAM_CHAT_ID'))
+TARGET_THREAD_ID = int(os.getenv('TELEGRAM_THREAD_ID'))
+print(os.getenv('TELEGRAM_BOT_TOKEN'))
+print(os.getenv('TELEGRAM_CHAT_ID'))
+print(os.getenv('TELEGRAM_THREAD_ID'))
+
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -63,8 +68,12 @@ async def schedule_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def send_message(schedule_time, message_text: str) -> None:
     try:
         bot = application.bot
-        sent_message = await bot.send_message(TARGET_CHAT_ID, message_text)
-        follow_up_time = datetime.datetime.now(tz=MSK) + datetime.timedelta(seconds=60)
+        sent_message = await bot.send_message(
+            chat_id=TARGET_CHAT_ID,
+            text=message_text,
+            message_thread_id=TARGET_THREAD_ID  
+        )
+        follow_up_time = datetime.datetime.now(tz=MSK) + datetime.timedelta(seconds=600)
 
         loop = asyncio.get_event_loop()
         scheduler.add_job(
@@ -88,15 +97,20 @@ async def show_keyboard(message_id: int, schedule_time) -> None:
     try:
         bot = application.bot
         header_message = "Пожалуйста, подтвердите, что полив выполнен)"
-        sent_header_message = await bot.send_message(TARGET_CHAT_ID, header_message, reply_markup=reply_markup)
+        sent_header_message = await bot.send_message(
+            chat_id=TARGET_CHAT_ID,
+            text=header_message,
+            reply_markup=reply_markup,
+            message_thread_id=TARGET_THREAD_ID  
+        )
 
         message_ids_to_remove[schedule_time] = sent_header_message.message_id
 
         logger.info(f"Keyboard shown for message ID {message_id}")
         logger.info(f"Header message sent with ID {sent_header_message.message_id}")
 
-        await schedule_removal(sent_header_message.message_id, 30)
-        await schedule_check_response(schedule_time, 30)
+        await schedule_removal(sent_header_message.message_id, 120)
+        await schedule_check_response(schedule_time, 120)
 
     except Exception as e:
         logger.error(f"Error while showing keyboard: {e}")
@@ -169,8 +183,6 @@ def record_watering(schedule_time, success: bool) -> None:
 
 def schedule_jobs():
     job_times = {
-        'tue': [(11, 36, "Привет! Не забудь полить, пожалуйста, траву в Витграссе, иначе она завянет)"),
-                (11, 40, "Не забудь полить, ещё раз, пожалуйста, траву в Витграссе, иначе она завянет))")],
         'sat': [(10, 0, "Привет! Не забудь полить, пожалуйста, траву в Витграссе, иначе она завянет))"),
                 (18, 0, "Не забудь полить, ещё раз, пожалуйста, траву в Витграссе, иначе она завянет))")],
         'sun': [(10, 0, "Привет! Не забудь полить, пожалуйста, траву в Витграссе, иначе она завянет))"),
